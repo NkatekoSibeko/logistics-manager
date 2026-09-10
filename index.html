@@ -5,18 +5,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Logistics Manager</title>
   <style>
-    body { font-family: Arial, sans-serif; max-width: 700px; margin: 40px auto; padding: 0 16px; }
+    body { font-family: Arial, sans-serif; max-width: 800px; margin: 40px auto; padding: 0 16px; }
     h1 { margin-bottom: 8px; }
-    form, table { width: 100%; margin-top: 20px; }
-    input, select, button { padding: 8px; margin: 6px 0; width: 100%; box-sizing: border-box; }
-    button { cursor: pointer; }
-    table { border-collapse: collapse; }
+    form { display: grid; gap: 8px; margin: 20px 0; }
+    input, select, button { padding: 8px; }
+    table { width: 100%; border-collapse: collapse; margin-top: 16px; }
     th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+    .actions { display: flex; gap: 6px; }
+    button { cursor: pointer; }
   </style>
 </head>
 <body>
   <h1>Logistics Manager</h1>
-  <p>Track shipments and delivery dates</p>
+  <p>Track, update, and manage shipments</p>
 
   <form id="shipmentForm">
     <input id="shipmentId" placeholder="Shipment ID" required />
@@ -27,7 +28,8 @@
       <option value="In Transit">In Transit</option>
       <option value="Delivered">Delivered</option>
     </select>
-    <button type="submit">Add shipment</button>
+    <button type="submit" id="submitBtn">Add shipment</button>
+    <button type="button" id="cancelEditBtn" hidden>Cancel edit</button>
   </form>
 
   <h2>Shipments</h2>
@@ -38,6 +40,7 @@
         <th>Customer</th>
         <th>Delivery date</th>
         <th>Status</th>
+        <th>Actions</th>
       </tr>
     </thead>
     <tbody id="shipmentList"></tbody>
@@ -46,32 +49,78 @@
   <script>
     const form = document.getElementById("shipmentForm");
     const list = document.getElementById("shipmentList");
+    const submitBtn = document.getElementById("submitBtn");
+    const cancelEditBtn = document.getElementById("cancelEditBtn");
+
     let shipments = JSON.parse(localStorage.getItem("shipments") || "[]");
+    let editIndex = null;
+
+    function save() {
+      localStorage.setItem("shipments", JSON.stringify(shipments));
+    }
+
+    function resetForm() {
+      form.reset();
+      editIndex = null;
+      submitBtn.textContent = "Add shipment";
+      cancelEditBtn.hidden = true;
+    }
 
     function render() {
-      list.innerHTML = shipments.map(s => `
+      list.innerHTML = shipments.map((s, index) => `
         <tr>
           <td>${s.id}</td>
           <td>${s.customer}</td>
           <td>${s.deliveryDate}</td>
           <td>${s.status}</td>
+          <td class="actions">
+            <button type="button" onclick="startEdit(${index})">Edit</button>
+            <button type="button" onclick="removeShipment(${index})">Delete</button>
+          </td>
         </tr>
       `).join("");
     }
 
+    window.startEdit = function(index) {
+      const s = shipments[index];
+      document.getElementById("shipmentId").value = s.id;
+      document.getElementById("customer").value = s.customer;
+      document.getElementById("deliveryDate").value = s.deliveryDate;
+      document.getElementById("status").value = s.status;
+      editIndex = index;
+      submitBtn.textContent = "Update shipment";
+      cancelEditBtn.hidden = false;
+    };
+
+    window.removeShipment = function(index) {
+      if (!confirm("Delete this shipment?")) return;
+      shipments.splice(index, 1);
+      save();
+      render();
+      resetForm();
+    };
+
     form.addEventListener("submit", (e) => {
       e.preventDefault();
-      shipments.push({
-        id: document.getElementById("shipmentId").value,
-        customer: document.getElementById("customer").value,
+      const shipment = {
+        id: document.getElementById("shipmentId").value.trim(),
+        customer: document.getElementById("customer").value.trim(),
         deliveryDate: document.getElementById("deliveryDate").value,
         status: document.getElementById("status").value
-      });
-      localStorage.setItem("shipments", JSON.stringify(shipments));
-      form.reset();
+      };
+
+      if (editIndex === null) {
+        shipments.push(shipment);
+      } else {
+        shipments[editIndex] = shipment;
+      }
+
+      save();
       render();
+      resetForm();
     });
 
+    cancelEditBtn.addEventListener("click", resetForm);
     render();
   </script>
 </body>
