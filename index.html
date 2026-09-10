@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Logistics Manager</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 700px; margin: 40px auto; padding: 0 16px; }
+    h1 { margin-bottom: 8px; }
+    form, table { width: 100%; margin-top: 20px; }
+    input, select, button { padding: 8px; margin: 6px 0; width: 100%; box-sizing: border-box; }
+    button { cursor: pointer; }
+    table { border-collapse: collapse; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+  </style>
+</head>
+<body>
+  <h1>Logistics Manager</h1>
+  <p>Track shipments and delivery dates</p>
+
+  <form id="shipmentForm">
+    <input id="shipmentId" placeholder="Shipment ID" required />
+    <input id="customer" placeholder="Customer name" required />
+    <input id="deliveryDate" type="date" required />
+    <select id="status" required>
+      <option value="Pending">Pending</option>
+      <option value="In Transit">In Transit</option>
+      <option value="Delivered">Delivered</option>
+    </select>
+    <button type="submit">Add shipment</button>
+  </form>
+
+  <h2>Shipments</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Customer</th>
+        <th>Delivery date</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody id="shipmentList"></tbody>
+  </table>
+
+  <script>
+    const form = document.getElementById("shipmentForm");
+    const list = document.getElementById("shipmentList");
+    let shipments = JSON.parse(localStorage.getItem("shipments") || "[]");
+
+    function render() {
+      list.innerHTML = shipments.map(s => `
+        <tr>
+          <td>${s.id}</td>
+          <td>${s.customer}</td>
+          <td>${s.deliveryDate}</td>
+          <td>${s.status}</td>
+        </tr>
+      `).join("");
+    }
+
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      shipments.push({
+        id: document.getElementById("shipmentId").value,
+        customer: document.getElementById("customer").value,
+        deliveryDate: document.getElementById("deliveryDate").value,
+        status: document.getElementById("status").value
+      });
+      localStorage.setItem("shipments", JSON.stringify(shipments));
+      form.reset();
+      render();
+    });
+
+    render();
+  </script>
+</body>
+</html>
